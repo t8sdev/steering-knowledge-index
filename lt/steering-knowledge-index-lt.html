@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>AIプロジェクトの3層記憶セット</title>
+<style>
+:root{--pink:#f50087;--red:#e60012;--yellow:#fff000;--blue:#0758d9;--ink:#17202c;--paper:#fffaf1;--docs:#1d73ea;--steer:#ed286a;--index:#f2a900}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:"Noto Sans JP","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;color:var(--ink)}#stage{position:absolute;width:1280px;height:720px;left:50%;top:50%;transform-origin:center;overflow:hidden;background:#fff}.slide{display:none;position:absolute;inset:0;overflow:hidden}.slide.active{display:block}.stripe{position:absolute;top:0;left:0;right:0;height:13px;background:linear-gradient(90deg,#0057db 0 33%,#fff 33% 38%,#e60012 38% 67%,#fff 67% 72%,#ffe500 72%)}.cm{background-image:linear-gradient(#ffffff12,#ffffff12),url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgZmlsbD0iIzVhNmI3YiIvPjwvc3ZnPg==');background-size:cover;background-position:center}.cm:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 56%,#0068a977 100%);pointer-events:none}.host{position:absolute;z-index:2;object-fit:contain;object-position:bottom}.boss{left:-38px;bottom:-18px;width:425px;height:680px}.lady{right:24px;bottom:-4px;width:300px;height:555px}.happy{display:none}.swapped .normal{display:none}.swapped .happy{display:block;animation:pop .09s ease-out}.swapped .boss{filter:brightness(1.03)}@keyframes pop{from{transform:scale(.96)}to{transform:scale(1)}}
+.tag{position:absolute;z-index:5;top:25px;border:3px solid var(--blue);background:#fff;border-radius:13px;padding:8px 18px;font-weight:900;color:var(--blue);font-size:22px;line-height:1.15;text-align:center;box-shadow:0 3px 0 #ffffffb8}.tag.left{left:26px;width:320px}.tag.right{right:20px;width:310px;border-color:var(--pink);color:var(--pink)}.tag.mid{left:366px;width:555px}.product{position:absolute;z-index:4;left:345px;top:96px;width:590px;height:475px;border-radius:26px;background:#ffffffd9;border:5px solid #fff;box-shadow:0 7px 22px #08558e55;text-align:center;padding:26px 35px}.kicker{font-size:23px;font-weight:900;color:var(--blue);letter-spacing:.04em}.hero{margin:12px 0;font-weight:900;font-size:54px;line-height:1.05;color:var(--pink);text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff}.hero.sm{font-size:45px}.burst{display:inline-block;background:var(--yellow);border:4px solid var(--red);border-radius:14px;padding:12px 30px;font-weight:900;font-size:26px;line-height:1.25}.redpill{display:inline-block;margin-top:18px;background:var(--red);color:#fff;border:5px solid var(--yellow);border-radius:999px;padding:7px 38px;font-size:31px;font-weight:900}.price{font-size:25px;font-weight:900;color:var(--red)}.fine{position:absolute;z-index:6;bottom:13px;right:18px;font-size:13px;color:#fff}.three{display:flex;gap:8px;margin:18px -18px 12px}.mini{flex:1;border-radius:13px;padding:13px 5px;color:#fff;font-weight:900;font-size:20px;box-shadow:0 4px 0 #0002}.mini b{display:block;font-size:25px}.docs{background:var(--docs)}.steer{background:var(--steer)}.index{background:var(--index)}
+.ex{background:radial-gradient(circle at 80% 10%,#fff 0 8%,transparent 30%),linear-gradient(135deg,#fffdf7,#fff5df)}.ex .stripe{height:10px}.section{position:absolute;top:30px;left:52px;color:var(--red);font-size:20px;font-weight:900;letter-spacing:.08em}.title{position:absolute;left:52px;right:52px;top:68px;font-size:46px;line-height:1.12;font-weight:900;letter-spacing:-.04em}.subtitle{position:absolute;left:55px;right:55px;top:132px;font-size:21px;color:#52606d}.content{position:absolute;left:55px;right:55px;top:185px;bottom:52px}.bigline{font-size:64px;line-height:1.15;font-weight:900;letter-spacing:-.04em}.accent{color:var(--pink)}.cards{display:flex;gap:22px;height:100%}.card{flex:1;background:#fff;border-radius:22px;padding:26px;box-shadow:0 8px 25px #573d1620;border:2px solid #f1e7d5}.card h3{font-size:28px;margin:0 0 15px}.card p,.card li{font-size:21px;line-height:1.55}.card ul{margin:5px 0;padding-left:1.2em}.q{font-size:25px;font-weight:900;color:var(--pink)}.x{font-size:35px;color:#c20d2e}.timeline{display:grid;grid-template-columns:1fr 80px 1fr 80px 1fr;align-items:center;height:100%}.step{height:290px;border-radius:22px;background:#fff;padding:26px;text-align:center;border:4px solid}.step .num{font-size:18px;font-weight:900}.step h3{font-size:29px;margin:18px 0}.step p{font-size:21px;line-height:1.45}.arrow{font-size:52px;text-align:center;color:#777}.diagram{height:100%;display:grid;grid-template-columns:1.1fr .8fr 1.1fr;gap:25px;align-items:center}.layer{border-radius:22px;padding:28px;color:#fff;box-shadow:0 8px 0 #0002}.layer h3{font-size:33px;margin:0 0 8px}.layer p{font-size:22px;line-height:1.45;margin:0}.layer small{display:block;margin-top:16px;font-size:17px}.middle-arrow{text-align:center;font-size:24px;font-weight:900;line-height:1.6}.quote{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:54px;line-height:1.35;font-weight:900}.quote small{display:block;margin-top:25px;font-size:23px;color:#5c6670}.compare{display:grid;grid-template-columns:1fr 1fr;gap:28px;height:100%}.compare .card:first-child{border-top:10px solid #777}.compare .card:last-child{border-top:10px solid var(--pink)}.label{font-size:18px;color:#777;font-weight:900}.footer{position:absolute;bottom:16px;left:55px;font-size:15px;color:#778}.n{position:absolute;bottom:14px;right:18px;font:14px/1 monospace;color:#8391a0;z-index:20}.notes{display:none}.notes-open .notes{display:block;position:absolute;z-index:99;left:24px;right:24px;bottom:24px;background:#111e;color:#fff;padding:15px 20px;border-radius:12px;font-size:18px;line-height:1.45}.nav{position:fixed;inset:0;z-index:100;pointer-events:none}.nav button{pointer-events:auto;position:absolute;top:0;bottom:0;width:8%;opacity:0;border:0}.nav .prev{left:0}.nav .next{right:0}.meter{position:fixed;z-index:120;bottom:0;left:0;height:4px;background:var(--pink);transition:width .15s}.hint{position:fixed;right:13px;bottom:10px;color:#fff8;font-size:12px;z-index:121}.path{display:flex;align-items:center;gap:18px;justify-content:center;height:100%}.box{width:280px;border-radius:20px;padding:25px;color:#fff;text-align:center}.box b{display:block;font-size:29px}.box span{font-size:19px}.why{padding:18px 22px;background:#fff;border:3px dashed var(--pink);border-radius:16px;font-weight:900;font-size:20px}.repo{font:900 33px/1.3 monospace;color:var(--blue);background:#fff;border:3px solid var(--blue);padding:18px 28px;border-radius:18px;display:inline-block}
+.cm .tag.right{opacity:0;transform:scale(.92)}.cm.swapped .tag.right{opacity:1;transform:scale(1)}.tag,.hero,.title,.bigline,.quote{word-break:keep-all}.title{white-space:nowrap}.finalgrid{display:grid;grid-template-columns:1fr 245px;gap:42px;align-items:center;text-align:left;height:100%}.qr{width:245px;height:245px;background:#fff;border:10px solid #fff;border-radius:14px;box-shadow:0 8px 25px #573d1630}
+
+/* Rebuilt presentation pages: consistent fixed canvas and ample safe area */
+.lt{background:#f8fafc;color:#17263c;font-family:"Noto Sans JP","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif}
+.lt-topline{position:absolute;left:0;top:0;width:100%;height:10px;background:#e60012}
+.lt-eyebrow{position:absolute;left:76px;top:51px;font-size:21px;font-weight:800;color:#c71e3b}
+.lt-heading{position:absolute;left:76px;right:76px;top:108px;margin:0;font-size:47px;line-height:1.32;font-weight:900;letter-spacing:-.035em;white-space:normal;overflow-wrap:anywhere}
+.lt-body{position:absolute;left:76px;right:76px;top:252px;bottom:76px;display:flex;flex-direction:column;justify-content:center;gap:22px}
+.lt-center{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.lt-lead{font-size:35px;line-height:1.5;font-weight:800;margin:0}
+.lt-muted{font-size:24px;color:#657389;margin:0}
+.lt-grid{display:grid;gap:22px;width:100%}
+.lt-grid.three-cols{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lt-grid.two-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+.lt-tile{border-radius:20px;background:white;box-shadow:0 8px 30px #182d4810;border:2px solid #e3e9f1;padding:50px 15px;text-align:center;font-size:30px;font-weight:850}
+.lt-bottom{text-align:center;font-size:25px;line-height:1.45;font-weight:750;color:#465770;margin:12px 0 0}
+.lt-process{display:flex;align-items:center;justify-content:center;gap:13px}
+.lt-process span{background:white;border:2px solid #dce4ed;border-radius:15px;padding:26px 19px;font-size:27px;font-weight:800}
+.lt-process b{color:#d02548;font-size:28px}
+.lt-panel{background:#fff;border:2px solid #e0e7ef;border-radius:21px;padding:32px 28px;min-height:240px;display:flex;flex-direction:column;gap:18px;box-shadow:0 8px 28px #182d4810}
+.lt-panel small{font-size:22px;color:#6d7a8b;font-weight:800}
+.lt-panel strong{font-size:32px;line-height:1.3;font-weight:900}
+.lt-panel p{font-size:21px;line-height:1.5;margin:0;color:#526175}
+.lt-panel.docs-tone{border-top:9px solid #2678df}
+.lt-panel.steer-tone{border-top:9px solid #e73c78}
+.lt-panel.index-tone{border-top:9px solid #edae19}
+.lt-panel.emphasis{border-color:#e73c78;background:#fff7fa}
+.lt-paths{display:flex;align-items:center;justify-content:center;gap:58px}
+.lt-paths>div:first-child{display:flex;flex-direction:column;gap:13px}
+.lt-paths span{display:block;background:white;border:2px solid #dce4ed;border-radius:12px;padding:12px 42px;text-align:center;font-size:26px;font-weight:800}
+.lt-paths>b{font-size:70px;color:#e73c78}
+.lt-target{padding:46px 56px;border-radius:20px;background:#fce6ee;color:#8d1746;text-align:center;font-size:32px;font-weight:900}
+.lt-target small{display:block;font-size:21px;margin-top:10px}
+.lt-reading{display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
+.lt-node{border-radius:14px;border:2px solid #dce4ed;background:white;padding:13px 70px;min-width:480px;text-align:center;font-size:27px;font-weight:900}
+.lt-node small{display:block;font-size:17px;font-weight:600;color:#64748b;margin-top:4px}
+.lt-node.docs-tone{border-left:10px solid #2678df}
+.lt-node.steer-tone{border-left:10px solid #e73c78}
+.lt-node.index-tone{border-left:10px solid #edae19}
+.lt-reading>b{font-size:23px;line-height:1;color:#d02548}
+.lt-reading>b small{font-size:16px;color:#657389;margin-left:15px}
+.lt-repo{font-size:22px;font-weight:800;color:#1765bc;text-decoration:none;border-bottom:2px solid #1765bc;margin-top:10px}
+.lt .n{right:30px;bottom:26px}
+#stage{visibility:hidden}#stage.initialized{visibility:visible}
+</style><style>
+/* Script-aligned CM dialogue. First boss, then Hoshina on click. */
+.cm .tag.left{left:16px;top:22px;width:342px;font-size:19px;line-height:1.25;padding:11px 10px;min-height:0}
+.cm .tag.right{right:16px;top:22px;width:335px;font-size:19px;line-height:1.25;padding:11px 10px;min-height:0}
+.cm .tag.mid{left:365px;top:22px;width:550px;font-size:19px;padding:10px 8px}
+</style><style>html,body{overscroll-behavior:none;touch-action:manipulation}#stage{touch-action:pan-y}@media (pointer:coarse){.prev,.next{min-width:44px;min-height:44px}}</style><style>
+.slide.lt:nth-of-type(14) .lt-heading { font-size: 47px; line-height:1.22; }
+.slide.lt:nth-of-type(5) .lt-heading { font-size: 53px; }
+.slide.lt:nth-of-type(12) .lt-heading { font-size: 53px; }
+</style></head><body><main id="stage">
+<section class="slide cm" data-swap=""><div class="stripe"></div><div class="tag left">いや〜、最近のAIは<br/>すごいんですよ〜！<br/>コードも書く！<br/>テストもする！</div><div class="tag mid">最近のAIは、ここまでできる！</div><div class="tag right">すごい、<br/>すご〜い！</div><img class="host boss" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2M5ZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgYm9zczwvdGV4dD48L3N2Zz4="/><img class="host lady normal" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2UwZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeTwvdGV4dD48L3N2Zz4="/><img class="host lady happy" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2U4ZGNjOCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeSAoaGFwcHkpPC90ZXh0Pjwvc3ZnPg=="/><div class="product"><div class="kicker">調べる・直す・試す</div><div class="hero">AIちゃん、<br/>よく働く！</div><div class="burst">コードも仕様も読んで<br/>実装・テストまで</div><div class="redpill">ここがスゴイ！</div></div><div class="fine">※冒頭はCM風の演出です</div><div class="n"></div><aside class="notes">【0:00–0:18／CM風】社長「いや〜、最近のAIはすごいんですよ〜！ コードも書く！ テストもする！」→クリック→保科さん「すごい、すご〜い！」</aside></section>
+<section class="slide cm" data-swap=""><div class="stripe"></div><div class="tag left">ところがね〜、このAI、<br/>昨日のことを<br/>忘れちゃうんですよ！</div><div class="tag mid">便利なAIにも、困ったことが…</div><div class="tag right">ええ〜っ！ また最初からですか〜？</div><img class="host boss" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2M5ZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgYm9zczwvdGV4dD48L3N2Zz4="/><img class="host lady normal" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2UwZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeTwvdGV4dD48L3N2Zz4="/><img class="host lady happy" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2U4ZGNjOCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeSAoaGFwcHkpPC90ZXh0Pjwvc3ZnPg=="/><div class="product"><div class="hero">AIは<br/>「昨日」を<br/>忘れるの？</div><div class="burst">昨日迷ったことも<br/>間違えた仮説も<br/>ぜ〜んぶ忘れちゃう！</div><div class="redpill">ここが困る！</div></div><div class="n"></div><aside class="notes">【0:18–0:36／CM風】社長「ところがね〜、このAI、昨日のことを忘れちゃうんですよ！」→クリック→保科さん「ええ〜っ！ また最初からですか〜？」</aside></section>
+<section class="slide cm" data-swap=""><div class="stripe"></div><div class="tag left">そこで考えました！ AIの記憶セット！</div><div class="tag mid">昨日の経験を、今日の仕事へ</div><div class="tag right">すご〜い！ そんなことまでできるんですか〜！</div><img class="host boss" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2M5ZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgYm9zczwvdGV4dD48L3N2Zz4="/><img class="host lady normal" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2UwZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeTwvdGV4dD48L3N2Zz4="/><img class="host lady happy" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2U4ZGNjOCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeSAoaGFwcHkpPC90ZXh0Pjwvc3ZnPg=="/><div class="product"><div class="kicker">AIプロジェクトの</div><div class="hero sm">AIのための<br/>記憶セット！</div><div class="burst">経験を残して、必要な時に探す！</div><div class="redpill">3点セット！</div></div><div class="n"></div><aside class="notes">【0:36–0:56／CM風】社長「そこで考えました！ AIの記憶セット！」→クリック→保科さん「すご〜い！ そんなことまでできるんですか〜！」</aside></section>
+<section class="slide cm" data-swap=""><div class="stripe"></div><div class="tag left">しかもね〜、引き継ぎにも使えるんです！</div><div class="tag mid">毎日の記録が、次の人にも役立つ</div><div class="tag right">社長〜！<br/>それは助かりますね〜！</div><img class="host boss" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2M5ZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgYm9zczwvdGV4dD48L3N2Zz4="/><img class="host lady normal" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2UwZDNkZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeTwvdGV4dD48L3N2Zz4="/><img class="host lady happy" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2U4ZGNjOCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE5MCIgcj0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjxyZWN0IHg9IjkwIiB5PSIzMTAiIHdpZHRoPSIyMjAiIGhlaWdodD0iMjkwIiByeD0iOTAiIGZpbGw9IiNmZmZmZmY1NSIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYwIiBmb250LXNpemU9IjM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UExBQ0VIT0xERVIgbGFkeSAoaGFwcHkpPC90ZXh0Pjwvc3ZnPg=="/><div class="product"><div class="hero sm">日常の開発が<br/>引き継ぎ資料に！</div><div class="burst">何をした？ なぜ止まった？<br/>次はどこから？</div><div class="redpill">ここが便利！</div><div class="price">お値段ではなく、運用の話です</div></div><div class="n"></div><aside class="notes">【0:56–1:15／CM風】社長「しかもね〜、引き継ぎにも使えるんです！」→クリック→保科さん「社長〜！ それは助かりますね〜！」→社長「詳しくは、このあと！」</aside></section>
+<section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">ここから本題</div>
+<h1 class="lt-heading">AIに、昨日の判断は引き継がれているか？</h1>
+<div class="lt-body"><div class="lt-center"><p class="lt-lead">経験を記録し、必要なときに参照する。</p><p class="lt-muted">AIの記憶機能ではなく、開発現場から育った運用の仕組み。</p></div></div>
+<div class="n"></div>
+<aside class="notes">【目安40秒】さて、ここから本題です。さっき「AIは昨日を忘れる」と言いましたが、正確には、過去の作業で何を調べ、何を判断したのかが、次の作業にうまく引き継がれないことがある、という話です。AIに新しい記憶能力を追加するわけではありません。経験をファイルに残して、必要なときにAIが参照できるようにする。そのための仕組みを紹介します。ちなみに、最初から3層構造を考えていたわけではありません。実際の開発で困ったことを解決していったら、この形になりました。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">何が失われる？</div>
+<h1 class="lt-heading">正解だけでは、同じ失敗を防げない。</h1>
+<div class="lt-body"><div class="lt-grid three-cols"><div class="lt-tile">何を疑ったか</div><div class="lt-tile">どこで間違えたか</div><div class="lt-tile">なぜ判断を変えたか</div></div><p class="lt-bottom">次に似た問題が起きると、また同じ道をたどってしまう。</p></div>
+<div class="n"></div>
+<aside class="notes">【目安45秒】たとえば、何かの不具合を調査して、最終的に仕様書を更新したとします。仕様書には、最終的に何が正しいのかは残ります。でも、最初に何を疑ったのか、どこで間違えたのか、なぜ判断を変えたのか。そういう途中経過は、普通は残りません。すると、次に似た問題が起きたとき、また同じ調査をして、同じところで迷うことになります。正解だけでは、同じ失敗を防げない。これが最初の問題でした。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">最初に始めたこと ― Steering（舵取り）</div>
+<h1 class="lt-heading">作業を始めるときから、記録を育てる。</h1>
+<div class="lt-body"><div class="lt-process"><span>仮説</span><b>→</b><span>検証</span><b>→</b><span>採用・棄却</span><b>→</b><span>新発見</span><b>→</b><span>訂正</span></div><p class="lt-bottom">後から「最初から正解を知っていた」話に書き換えない。</p></div>
+<div class="n"></div>
+<aside class="notes">【目安55秒】そこで始めたのが、.steering/ への記録です。Steeringは「舵取り」の意味で、今日の経験を明日の仕事の舵取りに使う、という名前です。ポイントは、作業が終わってからまとめるのではなく、着手するときにファイルを作ること。調査しながら、仮説、検証結果、採用した判断、棄却した考えを追記していきます。途中で自分の考えが間違っていたと分かっても、消してきれいに書き直しません。「最初はこう考えた。でも検証したら違った。だから判断を変えた」と残します。なぜなら、次に同じ間違いをしないためには、間違えた経緯そのものが役に立つからです。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">Steeringの役割</div>
+<h1 class="lt-heading">今日の進捗が、明日の経験になる。</h1>
+<div class="lt-body"><div class="lt-grid two-cols"><div class="lt-panel"><small>作業中</small><strong>現在地を共有</strong><p>完了・未確認・回答待ち・次の作業</p></div><div class="lt-panel"><small>作業後</small><strong>経緯を残す</strong><p>判断・失敗・訂正・検証の記録</p></div></div><p class="lt-bottom">進捗欄は更新してよい。判断が変わった理由は残す。</p></div>
+<div class="n"></div>
+<aside class="notes">【目安50秒】この記録は、作業中と作業後で役割が変わります。作業中は、今どこまで進んでいるか、何が未確認か、何の回答を待っているか、次に何をするか。つまり、進捗管理や作業の引き継ぎに使えます。そして作業が終わったら、今度は「なぜその判断をしたのか」をたどるための記録になります。もちろん、TODOを全部永久保存するという意味ではありません。残したいのは、そのTODOがなぜ生まれ、なぜ変わったのかという経緯です。昨日までの進捗表が、今日からの歴史資料になるわけです。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">次に起きた問題</div>
+<h1 class="lt-heading">記録が増えると、探せない。</h1>
+<div class="lt-body"><div class="lt-center"><p class="lt-lead">「前にも似たことを調べたはず…」</p><p class="lt-muted">でも、どのファイルに書いたのか分からない。</p></div></div>
+<div class="n"></div>
+<aside class="notes">【目安35秒】ところが、これを続けていると、次の問題が起きました。記録が増えすぎて、探せないんです。「あれ、前にも似た問題を調べたよな」と思っても、どのファイルに書いたか分からない。せっかく経験を残しても、必要なときに見つからなければ使えません。そこで、次に作ったのが .knowledge-index/ です。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">Knowledge Index</div>
+<h1 class="lt-heading">答えを書かず、原記録への道を残す。</h1>
+<div class="lt-body"><div class="lt-paths"><div><span>文字コード</span><span>サーバ構成</span><span>環境との差異</span></div><b>→</b><div class="lt-target">同じSteering<br/><small>当時の原記録</small></div></div><p class="lt-bottom">見出し・関連ワード・参照先だけ。追記はAIが行い、迷うものだけ人間が確認。</p></div>
+<div class="n"></div>
+<aside class="notes">【目安60秒】Knowledge Indexは、経験の内容をまとめる場所ではありません。経験がどこに書いてあるかを探すための索引です。たとえば、一つの調査で文字コード、サーバ構成、環境差異を調べたとします。これらは別々の話題ですが、同じSteeringファイルに記録されているかもしれません。そこで、それぞれの話題から同じ原記録にたどり着けるようにします。索引に書くのは、見出し、関連ワード、参照先だけ。原記録の内容を要約してコピーしません。要約を増やすと、元の記録と食い違ったり、古い判断が独り歩きしたりするからです。索引の追記は、Steeringが確定したときにAIが行います。何を検索の入口として残すか迷うものだけ、人間に確認します。調査の途中は、更新が重いので、AIが「更新しますか」と提案する形にしています。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">3つの役割</div>
+<h1 class="lt-heading">現在の正と、過去の判断を混同しない。</h1>
+<div class="lt-body"><div class="lt-grid three-cols"><div class="lt-panel docs-tone"><small>docs/</small><strong>現在の正</strong><p>現在の仕様・確認済みの状態<br/><small>未確定は書かない</small></p></div><div class="lt-panel steer-tone"><small>.steering/</small><strong>経験そのもの</strong><p>作業の現在地と時系列の経緯</p></div><div class="lt-panel index-tone"><small>.knowledge-index/</small><strong>探すための索引</strong><p>過去の記録への入口</p></div></div></div>
+<div class="n"></div>
+<aside class="notes">【目安50秒】ここまでで、3つの役割がそろいました。docs/ は、現在の仕様や確認済みの状態。つまり、今の正として管理する情報です。.steering/ は、調査や作業の経緯。成功も失敗も含めた経験そのものです。.knowledge-index/ は、その経験を探すための入口です。ここで重要なのは、現在の正と、過去の判断を混ぜないこと。過去に正しかった判断が、今も正しいとは限りません。だから、経験は保存しますが、結論を無条件には引き継ぎません。もう一つ、Steeringでまだ確定していない事項は、確定した仕様として docs/ に書かない、というルールも入れています。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">読む順番</div>
+<h1 class="lt-heading">現在の仕様で解決するなら、そこで終わり。</h1>
+<div class="lt-body"><div class="lt-reading"><div class="lt-node docs-tone">docs/ <small>今どうなっている？</small></div><b>↓<small>理由や経緯が必要なら</small></b><div class="lt-node index-tone">.knowledge-index/ <small>どこにある？</small></div><b>↓</b><div class="lt-node steer-tone">.steering/ <small>なぜそうなった？</small></div></div></div>
+<div class="n"></div>
+<aside class="notes">【目安40秒】AIが情報を参照するときも、順番があります。まず、現在の仕様を確認します。それで解決するなら、そこで終わりです。でも、「なぜこの仕様になったんだろう」「前に似た問題があったはず」となったら、Knowledge Indexから関連するSteeringを探します。そして、当時の原記録を読みます。過去を毎回全部読むのではなく、必要な経験だけ取りにいく。これが基本です。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">経験の使い方</div>
+<h1 class="lt-heading">前回の失敗から、先回りできる。</h1>
+<div class="lt-body"><div class="lt-grid two-cols"><div class="lt-panel"><small>前回の経験</small><strong>確認を後回し</strong><p>外部回答待ちで、後工程が圧迫された</p></div><div class="lt-panel emphasis"><small>今回の提案</small><strong>先に確認しよう</strong><p>同じリスクがないか、着手前に確認する</p></div></div><p class="lt-bottom">ただし、過去の結論を鵜呑みにせず、今回も検証する。</p></div>
+<div class="n"></div>
+<aside class="notes">【目安50秒】では、経験を残すと何が変わるのか。たとえば前回、外部への確認を後回しにしてしまい、回答待ちで後工程が圧迫されたとします。その経緯が残っていれば、次に似た作業を始めるとき、AIから「今回は先に確認したほうがよくないですか」と提案できます。これは単に前回の答えを再利用するのとは違います。過去の失敗を、今回の危険予知に使うわけです。ただし、前回の状況と今回の状況が同じとは限りません。過去の経験は判断材料であって、現在の正解ではありません。</aside>
+</section><section class="slide lt">
+<div class="lt-topline"></div>
+<div class="lt-eyebrow">持ち帰ってほしいこと</div>
+<h1 class="lt-heading">経験は保存する。意味は現在の文脈で再構築する。</h1>
+<div class="lt-body"><div class="lt-center"><p class="lt-lead">過去の結論を鵜呑みにせず、今の状況で判断する。</p><p class="lt-muted">まずは一つの調査で、仮説と検証の経緯を残そう。</p><a class="lt-repo" href="https://github.com/t8sdev/steering-knowledge-index">github.com/t8sdev/steering-knowledge-index</a></div></div>
+<div class="n"></div>
+<aside class="notes">【目安40秒】最後に、持ち帰ってほしいことです。経験は保存する。意味は現在の文脈で再構築する。過去の結論をそのまま使うのではなく、過去に何が起きたかを参照して、今の状況で判断し直す。そのために、現在の仕様、作業の経験、経験への索引を分けて管理します。最初から大きな仕組みを作る必要はありません。まずは一つの調査タスクで、着手時にファイルを作り、仮説と検証の経緯を残すところから始めてみてください。ありがとうございました。</aside>
+</section></main><div class="nav"><button aria-label="previous" class="prev"></button><button aria-label="next" class="next"></button></div><div class="meter"></div><div class="hint">Click: 左半分で戻る / 右半分で進む　← → / Space　F: fullscreen　N: notes</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];let i=0;const stage=document.querySelector('#stage');
+function fit(){
+  const viewportWidth=window.visualViewport?.width || innerWidth;
+  const viewportHeight=window.visualViewport?.height || innerHeight;
+  // Contain on every screen size: never crop the slide.
+  const scale=Math.min(viewportWidth/1280,viewportHeight/720);
+  stage.style.transform='translate(-50%,-50%) scale('+scale+')';
+}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,j)=>{s.classList.toggle('active',j===i);if(j!==i)s.classList.remove('swapped','notes-open');s.querySelector('.n').textContent=(j+1)+' / '+slides.length});document.querySelector('.meter').style.width=((i+1)/slides.length*100)+'%'}
+function next(){const s=slides[i];if(s.dataset.swap!==undefined&&!s.classList.contains('swapped'))s.classList.add('swapped');else show(i+1)}
+function prev(){const s=slides[i];if(s.classList.contains('swapped'))s.classList.remove('swapped');else show(i-1)}
+addEventListener('resize',fit);window.visualViewport?.addEventListener('resize',fit);addEventListener('orientationchange',fit);addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prev()}else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1);else if(e.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();else if(e.key.toLowerCase()==='n')slides[i].classList.toggle('notes-open')});document.querySelector('.next').onclick=next;document.querySelector('.prev').onclick=prev;
+// SpeakerDeck-style navigation: left half = back, right half = forward.
+// Keep links, buttons, and selectable text usable.
+stage.addEventListener('click',event=>{
+  if(Date.now()<ignoreClickUntil)return;
+  if(event.target.closest('a, button, input, textarea, select, [contenteditable="true"], .notes'))return;
+  const bounds=stage.getBoundingClientRect();
+  const midpoint=bounds.left+bounds.width/2;
+  if(event.clientX<midpoint)prev();else next();
+});
+// Swipe horizontally on touchscreens; taps retain left/right half navigation.
+let touchStart=null;
+let ignoreClickUntil=0;
+stage.addEventListener('touchstart',event=>{
+  if(event.touches.length!==1)return;
+  touchStart={x:event.touches[0].clientX,y:event.touches[0].clientY};
+},{passive:true});
+stage.addEventListener('touchend',event=>{
+  if(!touchStart || !event.changedTouches.length)return;
+  const dx=event.changedTouches[0].clientX-touchStart.x;
+  const dy=event.changedTouches[0].clientY-touchStart.y;
+  touchStart=null;
+  if(Math.abs(dx)<45 || Math.abs(dx)<Math.abs(dy)*1.3)return;
+  event.preventDefault();
+  ignoreClickUntil=Date.now()+500;
+  if(dx<0)next();else prev();
+},{passive:false});
+fit();show(0);stage.classList.add("initialized");
+</script></body></html>
