@@ -25,6 +25,8 @@ project/
 
 Steeringを書くのも読むのも、基本的にはAIです。人間が詳細な作業日報を書く必要はありません。
 
+Steering（舵取り）は、今日の仕事で得た経験を、明日の仕事の舵取りに使うための記録です。実際の記載例は [example/](example/) にあります（`CLAUDE.md`、`docs/`、`.steering/`、`.knowledge-index/` の見本）。いずれも架空のプロジェクトの例です。
+
 ## 使い方
 
 ### 1. CLAUDE.mdに運用ルールを書く
