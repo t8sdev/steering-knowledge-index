@@ -47,11 +47,11 @@
 - 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 実レスポンスの観測`
 - 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 訂正`
 - 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 境界での扱い（案の比較）`
-- 2026-11-13 `.steering/2026-11-13-api-response-followup.md` `## 11/14 回答`
+- 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 11/14 回答`
 - 2026-11-20 `.steering/2026-11-20-order-history-api-type-mismatch.md` `## 前回の結論をそのまま使わない`
 
 ## 外部の回答待ちの間にできること
 関連ワード: 回答待ち, 待つ間, 先に進める, テストケース, 境界で検証, 仕様未確定, 確定扱いしない
 - 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## API担当への確認`
 - 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 境界での扱い（案の比較）`
-- 2026-11-13 `.steering/2026-11-13-api-response-followup.md` `## 判断`
+- 2026-11-12 `.steering/2026-11-12-api-response-type-investigation.md` `## 11/14 判断`

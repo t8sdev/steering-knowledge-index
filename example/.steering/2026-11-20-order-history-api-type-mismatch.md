@@ -1,7 +1,7 @@
 # 注文履歴APIの仕様書と実レスポンスの型が合わない件の調査
 
 - 日付: 2026-11-20
-- 関連: [[2026-11-12-api-response-type-investigation]]（会員一覧APIで同じ種類の不一致を調査）、[[2026-11-13-api-response-followup]]（会員一覧APIの回答と、docsへの反映の判断）
+- 関連: [[2026-11-12-api-response-type-investigation]]（会員一覧APIで同じ種類の不一致を調査。API担当の回答と、docsへの反映の判断を含む）
 - ステータス: 調査中（API担当の回答待ち）
 
 ※架空の記載例です。API・項目名・担当者は実在しません。
@@ -10,7 +10,7 @@
 
 - 注文履歴画面の改修で、注文履歴API（`GET /orders`）を呼ぶ。会員一覧APIとは別の担当者。
 - 仕様書では`orderId`が数値。実レスポンスでは`"A10023"`のような文字列になっていた。
-- 会員一覧APIの件と似ている。`.knowledge-index/misc.md`の「JSONと仕様書の型が合わない件」から、上の2つのSteeringにたどり着いた。
+- 会員一覧APIの件と似ている。`.knowledge-index/misc.md`の「JSONと仕様書の型が合わない件」から、[[2026-11-12-api-response-type-investigation]]にたどり着いた。
 
 ## 進捗
 
