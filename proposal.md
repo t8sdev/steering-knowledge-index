@@ -1,527 +1,365 @@
-# Use Case Proposal: Long-Term AI Project Memory with Docs, Steering, and a Knowledge Index
+# 提案書：AIと長期間仕事をするためのプロジェクト記憶の仕組み
 
-## Introduction
+## はじめに
 
-**Steering means steering the course: record today’s voyage, then use that memory to steer tomorrow’s voyage.**
+AIコーディングエージェントは、コードを書くためだけの道具ではなくなりました。仕様の確認、調査、実装プランの作成、レビュー、テストまで、開発のさまざまな場面で利用できます。
 
-When AI coding agents are used for long-running investigation and development work, storing only “what is currently true” is often not enough for the next task.
+ただ、何日も一緒に仕事をしていると、一つ困ったことがあります。
 
-What also matters is experience:
+**AIが、それまでの仕事の経緯を忘れてしまうことです。**
 
-- where the investigation started,
-- what was suspected,
-- what was checked,
-- which hypotheses were wrong,
-- what was initially overlooked,
-- what new issues were discovered along the way,
-- which evidence changed the understanding,
-- what became dependent on an external answer,
-- and where similar work became stuck in the past.
+会話が長くなるとコンテキストが圧縮されます。新しいセッションを開けば、それまでの会話もそのままでは引き継がれません。特に困るのは、最終的な結論ではなく、そこへ至るまでの判断が抜け落ちることです。
 
-This use case separates those concerns into three layers: `docs/`, `.steering/`, and `.knowledge-index/`.
+そこで、**AI自身に作業の経緯をファイルへ記録させ、必要なときに読み直してもらう**仕組みを考えました。
 
-Findings, verification, and decisions captured in Steering can cause the Current Truth in `docs/` to be created or corrected. Retrieval runs in the opposite direction: start with Current Truth, and descend through the Knowledge Index into Steering only when the question requires history, rationale, or analogous experience.
+- `docs/` — 現在の仕様や設計
+- `.steering/` — 作業の経緯と現在地
+- `.knowledge-index/` — 過去の経験を探すための索引
 
-> **Current Truth first. Experience when needed.**
+これらをAI自身が運用するためのルールを `CLAUDE.md` に定義します。特別なデータベースや外部サービスは必要ありません。
 
----
+## 1. なぜ会話だけでは足りないのか
 
-## 1. Docs — Current Deliverables
+### 1.1 コンテキストは永続的な記憶ではない
 
-`docs/` contains the currently valid specification, verified behavior, known constraints, and other present-state deliverables.
+Claude Codeには、コンテキストウィンドウの上限に近づいたときに会話を要約する自動圧縮機能があります。一定の条件下で、操作されていない会話を圧縮するアイドル圧縮（Idle Compaction）もあります。
 
-The question this layer answers is:
+アイドル圧縮は設定によって無効化できます。
 
-> **What is true now?**
-
-A reader should not need to work through obsolete hypotheses or investigation detours just to understand the current specification.
-
-When an investigation changes the understanding of the system, findings captured in Steering are verified and the resulting Current Truth is reflected in `docs/`.
-
-```text
-investigation / implementation / verification
-    ↓
-Steering
-    ↓
-verified current understanding
-    ↓
-docs/
+```json
+{
+  "idleCompaction": false
+}
 ```
 
-This is not deterministic replay. A human or AI interprets and verifies the experience record before updating Current Truth.
+ただし、通常の自動圧縮は別の仕組みです。圧縮自体が悪いわけではありません。問題は、**要約によって、後から必要になる情報が抜け落ちる可能性があること**です。
 
----
+実装方針を決めた理由、採用しなかった案、調査途中の発見などは、その場では重要でも、要約に残るとは限りません。
 
-## 2. Steering — Current Work State and Experience Record
+### 1.2 コンテキストが大きいほど負担も増える
 
-A Steering file is not a report written after the work is finished.
+会話を長く維持し続けると、過去のメッセージやツールの実行結果が増え、入力トークンの処理量が増えます。利用量やコスト、応答時間に影響する場合があり、関係の薄い古い情報が判断を妨げることもあります。
 
-It is created when an investigation, incident response, design decision, or other task begins, when that work is worth tracing later. The AI agent updates it while doing the work.
+プロンプトキャッシュで負担を軽減できる場合はありますが、コンテキストの肥大化そのものがなくなるわけではありません。
 
-As a result, Steering naturally retains things that may look unnecessary after the answer is known:
+### 1.3 コンテキストを捨てられるようにする
 
-- initial hypotheses,
-- investigation results,
-- rejected hypotheses and corrections,
-- questions discovered mid-investigation,
-- unplanned side investigations,
-- questions sent to external parties,
-- waiting states,
-- implementation,
-- tests,
-- real-device verification,
-- and remaining unknowns.
+**会話を維持するのではなく、仕事に必要な文脈をファイルへ残す。**
 
-These are not merely noise. They are the experience that actually occurred.
+経緯が外部に記録されていれば、圧縮後や新しいセッションでも必要な情報を読み直せます。ただし、すべての記録を毎回読み込むのでは意味がありません。必要なファイルを選んで参照する仕組みが必要です。
 
-### 2.1 Do not force one file into one Concept
-
-The unit of a Steering file is not a Knowledge item or Concept.
-
-It may instead correspond to a date, task, investigation, incident, design decision, or change whose history is worth tracing as one experience.
-
-For example, an investigation that starts with character encoding may uncover:
-
-- server configuration,
-- a discrepancy between documentation and the real environment,
-- a reverse proxy,
-- and environment-specific configuration.
-
-At the beginning of the investigation, we do not know what the final Knowledge or Concepts will be.
-
-The investigation scope can define what we are looking for, but it should not unnecessarily constrain what we record.
-
-Important related findings discovered during the work remain in the same Steering record.
-
-### 2.2 Do not rewrite history after learning the answer
-
-Steering is updated in real time.
-
-For example:
+## 2. 三つのディレクトリの役割
 
 ```text
-investigate possible mojibake
-    ↓
-check file encodings
-    ↓
-discover that non-UTF-8 text is not limited to comments
-    ↓
-check server charset settings
-    ↓
-find that the settings do not explain observed production behavior
-    ↓
-inspect the real environment
-    ↓
-discover an additional server layer
-    ↓
-continue the investigation
+project/
+├── docs/               # 現在の仕様・設計
+├── .steering/           # 作業の経緯と現在地
+├── .knowledge-index/    # 過去の経験を探す索引
+└── CLAUDE.md            # AI自身の運用ルール
 ```
 
-If this is how the work unfolded, that path should remain visible.
+### 2.1 docs/ — 今、何が正しいのか
 
-Once the root cause is known, the record should not be rewritten to make it look as if the correct answer was obvious from the start.
+`docs/` には現在の仕様、設計、確認済みの挙動、制約などを記録します。三つの実装案を比較した末に一つを採用した場合、現在の仕様書には採用した方針を記載します。
 
-Incorrect hypotheses are not erased. They are corrected by later evidence.
+### 2.2 .steering/ — どうやってここまで来たのか
 
-A dead end already explored by one AI agent is still useful experience for a future agent.
+`.steering/` には、作業の発端から現在に至るまでの経緯を記録します。依頼内容、参照資料、実装プラン、壁打ち、採用しなかった案、検証結果、誤った仮説と訂正、外部確認、残作業などが対象です。
 
-### 2.3 Current operational state may be overwritten
+**Steeringは完成後の報告書ではありません。作業開始時に作り、作業を進めながら更新する記録です。**
 
-Steering does not need to be entirely append-only.
+### 2.3 .knowledge-index/ — あの経験はどこにあるのか
 
-Fields that describe the current work state — such as TODOs, status, remaining work, or items waiting for confirmation — may be updated in place.
+Steeringが増えると、必要な経験がどのファイルにあるか分からなくなります。Knowledge Indexには、話題名、関連ワード、日付、Steeringファイルと見出しを記載します。
 
-For example:
+ここに経験の要約や結論を重複して保存することは避けます。現在の問いに応じて原記録を読み直すためです。
+
+## 3. Steeringを書くのも読むのもAI
+
+人間が毎日詳細な日報を書くことを前提にしていません。**Steeringを書くのも読むのも、基本的にはAIです。**
+
+### 3.1 作業開始時に情報を整理する
+
+仕様書、指示書、チケット、チャットなどをAIに提示します。AIは発端、情報源、確定事項、未確定事項、確認事項を整理し、Steeringを作成します。
+
+PDFやWordなどは必要に応じてテキスト化します。元資料の記載とAIの推測を混同しないことが重要です。
+
+### 3.2 実装プランの壁打ちを記録する
+
+AIが作成したプランを人間と検討し、保守性、セキュリティ、運用、工数などの観点から修正します。
 
 ```text
-- [x] inspect code
-- [x] confirm specification
-- [x] implement
-- [ ] verify on device
-```
-
-There is no need to preserve every historical snapshot of that checklist.
-
-What should remain is the reason the state changed.
-
-If an external answer resolved a pending item, preserve the answer and what it established.
-
-**Do not preserve the history of the TODO itself; preserve why the TODO moved.**
-
-In other words: the progress section is the current position and may be overwritten; the events and decisions that produced that position remain chronological.
-
-### 2.4 During work, Steering acts as a coordination surface
-
-With this structure, Steering also serves as a live coordination surface.
-
-The AI agent can determine:
-
-- what is complete,
-- what remains unverified,
-- what is implemented but not yet verified on a real device,
-- what is waiting on an external response,
-- and what can be worked on immediately.
-
-A human can simply ask:
-
-> What remains?
-
-The AI reads the Steering record and reconstructs the remaining work, including tasks discovered during the investigation that were not part of the original plan.
-
-Human-provided constraints can also be recorded in the same context:
-
-- expected response dates,
-- test-environment deployment dates,
-- dates when device verification is possible,
-- release dates.
-
-Steering is therefore more than a TODO list. It is a shared surface for the human and the agent to understand the current position of the work.
-
-### 2.5 Today’s progress record becomes tomorrow’s experience record
-
-During active work, a Steering file contains both the current state and the path that led to it.
-
-When the work is complete, verified Current Truth is reflected in `docs/`.
-
-The Steering file is not discarded.
-
-What was a progress record yesterday becomes an experience record today.
-
-Later, when similar work appears, that experience can be retrieved again.
-
-**Yesterday's progress record becomes tomorrow's history, and that history can become the next task's risk signal.**
-
-This is also why the word “Steering” happens to fit the role the practice evolved into:
-
-**record today’s voyage, then use that memory to steer tomorrow’s voyage.**
-
-### 2.6 Use past experience to anticipate recurring risk
-
-Suppose a previous task followed this pattern:
-
-```text
-specification is ambiguous
+AIがA案を提案
     ↓
-confirmation is postponed
+人間が運用上の懸念を指摘
     ↓
-implementation eventually requires an external decision
+B案を検討
     ↓
-work blocks waiting for an answer
+検証で問題を発見
     ↓
-later stages become compressed
+C案を採用
 ```
 
-If that episode remains in Steering, a future AI agent encountering a structurally similar task can notice the pattern and suggest:
+最終的な実装プランにはC案を記載します。一方、SteeringにはA案とB案を採用しなかった理由も残します。**何を決めたかだけでなく、なぜそう決めたかを残します。**
 
-> Last time, this confirmation became a late-stage dependency. It may be better to ask now.
+### 3.3 実装中の発見も記録する
 
-This is not deterministic prediction.
-
-It is experience-based risk anticipation: surface structurally similar past failures early enough to reduce the chance of repeating them.
-
----
-
-## 3. Knowledge Index — Retrieval Paths into Experience
-
-As Steering grows, another problem appears:
-
-> I remember investigating something like this before, but I do not remember which Steering file contains it.
-
-`.knowledge-index/` exists to solve this retrieval problem.
-
-It is not the place where Knowledge itself is stored.
-
-An entry mainly contains:
-
-- a topic name,
-- related words,
-- date,
-- Steering file,
-- exact heading in that Steering file.
-
-### 3.1 Do not duplicate Current Truth and Experience
-
-If a question can be answered entirely from the current specification, verified behavior, or configuration in `docs/`, the Knowledge Index should not duplicate that information.
-
-The index becomes relevant when the question asks for history, rationale, or analogous experience, such as:
-
-- Why is the current specification this way?
-- Did we have a similar problem before?
-- Where did the previous task get stuck?
-- Which confirmation turned out to matter later?
-
-**The Knowledge Index connects Current Truth to past experience without collapsing them into the same layer.**
-
-### 3.2 Give one experience multiple entry points
-
-A single Steering file may naturally contain topics such as:
-
-- character encoding,
-- server architecture,
-- discrepancy between documentation and the actual environment.
-
-Instead of assigning the Steering file to one category, the Knowledge Index provides multiple entry points into the same experience.
+実装を始めると想定外の問題が見つかることがあります。例えば文字化けの調査から、実際にはサーバ構成の違いが原因だと分かる場合です。
 
 ```text
-character encoding ───┐
-server architecture ──┼→ same Steering record
-environment mismatch ─┘
-```
-
-This allows a future user or agent to rediscover the same experience using language that differs from the wording used when the work originally happened.
-
-### 3.3 Do not store a fixed summary
-
-As a rule, the Knowledge Index does not store a narrative summary of the experience.
-
-The same historical record can be read differently depending on the current question:
-
-- Why is the current specification this way?
-- Did this bug happen before?
-- Where did the previous task get stuck?
-- What should we confirm earlier this time?
-
-If we compress the experience into one fixed summary, we choose one interpretation at storage time.
-
-That summary can also become stale as later experience or corrections accumulate.
-
-Instead, the Knowledge Index says:
-
-> Relevant past experience is here.
-
-The current AI then reads the original record in the context of the current question and reconstructs the Knowledge needed now.
-
-### 3.4 Grow bottom-up
-
-The taxonomy is not designed up front.
-
-Start with a catch-all file such as `misc.md`, adding topics that people or agents actually need to find later.
-
-Split the index only when volume or natural clusters make a split useful.
-
-Steering is historical experience and should not be casually reorganized.
-
-The Knowledge Index is the current retrieval interface and may evolve as current retrieval needs change.
-
----
-
-## 4. Relationship Between the Three Layers
-
-There are two different flows: **updating Current Truth** and **retrieving prior experience**.
-
-### Update flow
-
-```text
-.steering/
-    Current Work State
-    + Chronological Experience
-        ↓
-    investigation / verification / decisions
-        ↓
-docs/
-    Current Truth
-```
-
-Experience recorded in Steering can change the current understanding, and verified findings are reflected in Docs.
-
-### Retrieval flow
-
-```text
-current question
+文字化けを調査 → 保存エンコーディングを確認 → 問題なし
     ↓
-docs/ — Current Truth
+サーバ設定を確認 → 実環境との不一致を発見
     ↓
-Can Current Truth answer it?
-    ├─ Yes → answer
-    └─ No
-         ↓
-.knowledge-index/ — Retrieval Paths into Experience
-         ↓
-relevant .steering/
-         ↓
-read the original record in the current context
-         ↓
-reconstruct the Knowledge needed now
-         ↓
-decision / next action / warning
+構成を再調査 → 別のサーバ構成が判明
 ```
 
-The roles are therefore:
+後から正しい原因が分かっても、最初から正解を知っていたように書き換えません。誤った仮説と訂正を時系列で残します。
+
+## 4. Steeringは進捗管理にも使う
+
+Steeringには作業の経緯と現在の状態を記録します。
+
+```md
+## 現在の進捗
+- [x] 既存コードの調査
+- [x] 実装方針の決定
+- [x] 実装
+- [ ] 実機確認
+
+## 確認待ち
+- 外部APIのエラー仕様について回答待ち
+```
+
+### 4.1 現在の状態は更新してよい
+
+すべてを追記専用にする必要はありません。TODOや進捗は更新して構いません。ただし、問題が見つかった経緯や判断は本文に残します。
+
+**進捗欄は現在地なので更新する。その現在地に至った経緯は残す。**
+
+### 4.2 完了後は経験の記録になる
+
+作業中のSteeringは進捗管理にも使えます。完了すると、そのまま過去の経験の記録になります。後から経緯を思い出して報告書を書く必要はありません。
+
+**昨日までの進捗表が、今日からの歴史資料になる。**
+
+## 5. セッションをまたぐ引き継ぎ
+
+長い会話を無理に維持せず、新しいセッションへ切り替えます。
+
+### 5.1 MEMORYに引き継ぎメモを作る
+
+現在のセッションで、AIに**Claude CodeのMEMORYへ一時的な引き継ぎメモを作成**させます。メモには次の三つを記録します。
+
+1. 次のセッションで参照するSteeringファイルと見出し
+2. 現在の作業状態
+3. 次に実施する作業
+
+例えば、次のような内容です。
+
+```md
+# 引き継ぎメモ
+
+## 参照するSteering
+- .steering/2026-11-13-api-investigation.md
+  - 実装方針の検討
+  - API接続の検証
+
+## 現在地
+- API接続処理は実装済み
+- エラー処理は未実装
+- 外部APIの仕様について確認待ち
+
+## 次の作業
+1. Steeringを読んで経緯を確認する
+2. 現在のコードと状態を照合する
+3. エラー処理を実装する
+4. 検証結果をSteeringに追記する
+```
+
+詳しい経緯はSteeringにあるため、MEMORYの引き継ぎメモへ複製しません。
+
+### 5.2 新しいセッションで再開する
+
+新しいセッションでは、MEMORYの引き継ぎメモを読ませます。指定されたSteeringを読み、背景、判断理由、現在地を把握したうえで、現在のコードや仕様と照合して作業を再開します。
+
+### 5.3 引き継ぎメモは使い捨てる
+
+MEMORYの引き継ぎメモは、次のセッションを開始するための一時的なものです。役目を終えたら使い回さず、次の引き継ぎ時に新しく作ります。永続的に残すのはSteeringです。
+
+**セッションも、引き継ぎメモも使い捨て。経験だけは使い捨てない。**
+
+## 6. 過去の経験を再利用する
+
+数か月前の経験を探すときは、どのSteeringを読めばよいか分かりません。そこでKnowledge Indexを使います。
+
+### 6.1 一つの経験に複数の入口を作る
+
+例えば文字コードの調査中にサーバ構成の問題が見つかった場合、同じSteeringを「文字コード」「サーバ構成」「環境差異」の複数トピックから参照できます。
+
+### 6.2 索引に要約を保存しない
+
+「なぜ現在の仕様になったのか」「以前も同じ問題が起きなかったか」「今回は先に何を確認すべきか」という問いでは、同じ経験でも注目する部分が違います。
+
+要約を索引に保存すると解釈が固定され、Steeringの訂正との不整合も生じます。索引には参照先を残し、AIが原記録を読み直します。
+
+### 6.3 分類は後から育てる
+
+最初から細かい分類体系を作らず、`misc.md` などから始めます。記録が増え、まとまりが見えてきたら分割します。Steeringの履歴は安易に再構成せず、Knowledge Indexの分類や関連ワードを調整します。
+
+## 7. 短期の引き継ぎと長期の記憶
+
+### 7.1 進行中の仕事を続ける
 
 ```text
-docs/
-    Current Truth
-    "What is true now?"
-
-.steering/
-    Current Work State
-    + Chronological Experience
-    "What happened, where are we now, and how did we get here?"
-
-.knowledge-index/
-    Retrieval Paths into Experience
-    "Where are the relevant memories?"
+セッションA → Steeringを更新 → MEMORYに引き継ぎメモ
+    ↓
+セッションB → 指定されたSteeringを読む → 作業再開
 ```
 
-The important distinction is that **stored experience is not the same thing as present cognition**.
-
-The same experience record can support different Knowledge depending on the question and current situation.
-
----
-
-## 5. Why This Fits AI Agents
-
-This approach is comparatively inexpensive because the AI agent is already participating in the work.
-
-For a human, reconstructing after the fact:
-
-- what they thought,
-- what they checked,
-- where they were wrong,
-- and why they changed direction
-
-can be expensive and biased by hindsight.
-
-The AI agent, however, is already participating in the hypotheses, searches, code reading, corrections, implementation, and tests.
-
-It can record what is known while that context is still alive.
-
-Steering is therefore not a report produced separately from the work.
-
-It is **an experience record produced naturally from the work itself**.
-
-### 5.1 The repository becomes a reverse-queryable handover artifact
-
-Keeping Steering and the Knowledge Index in the same repository as the code provides another practical benefit:
-
-**the repository itself becomes a reverse-queryable handover artifact for a successor or a new AI agent.**
-
-Traditional handover documentation requires the author to predict what a future reader will need to know and organize that information in advance.
-
-But future questions are difficult to predict.
-
-A successor may ask:
-
-- Why is the current specification this way?
-- Is it safe to change this configuration?
-- Did we have a similar bug before?
-- Where did this kind of work become difficult last time?
-- Why did this task require an external confirmation?
-- Is there something we should confirm earlier before making the next change?
-
-The three-layer model does not require all of those answers to be pre-edited into one handover document.
-
-Instead, the repository contains:
+### 7.2 過去の経験を探す
 
 ```text
-current code
-    +
-docs/                 Current Truth
-    +
-.knowledge-index/     entry points from current questions into the past
-    +
-.steering/            historical investigation, decisions, corrections,
-                      confirmations, and failures
+新しい作業 → docs/で現在の仕様を確認
+    ↓
+過去の経緯が必要 → Knowledge Indexで検索
+    ↓
+関連するSteeringを読む → 現在の作業に生かす
 ```
 
-A successor or AI agent begins with Docs to understand the current state. Only when rationale, history, or analogous experience is needed does it use the Knowledge Index to find relevant Steering and trace backward into the experience that produced the current state.
+**MEMORYの引き継ぎメモは進行中の仕事をつなぐもの。Knowledge Indexは蓄積された経験を探すものです。**
 
-This is fundamentally different from a handover document that must be read in the order chosen by its author.
+## 8. 経験を残すことで、先回りできる
 
-It is a **reverse-queryable handover system**, navigated from the reader’s current question.
+過去の経験は、同じ失敗を繰り返さないために使えます。
 
-The records are also not created solely for handover.
+例えば、曖昧な仕様の確認を後回しにしたため、実装途中で作業が止まった経緯が残っていれば、次の似た作業では先に確認するようAIが提案できるかもしれません。
 
-Steering already exists as part of everyday investigation and implementation, and the Knowledge Index grows as a retrieval layer over those experiences.
+ただし、過去と現在では条件が違う場合があります。過去の判断を正解としてそのまま適用せず、現在の状況と照合する必要があります。
 
-Therefore, when ownership changes, the team does not suddenly begin “writing the handover document.” **Everyday development activity has already been continuously producing it.**
+## 9. リポジトリが引き継ぎ資料になる
 
-What is transferred is not only code and current specification.
+SteeringとKnowledge Indexをコードと同じリポジトリで管理すると、担当者が変わったときにも役立ちます。
 
-It is also **the project’s accumulated experience: what happened, what was learned, and why the project is in its present state.**
+「なぜこの実装なのか」「この設定を変更してよいか」「以前に似た不具合はなかったか」など、後任者が現在の疑問から過去の経験を探せます。
 
----
+**普段の開発で記録した経験が、そのまま引き継ぎの材料になります。**
 
-## 6. Questions for OKF
+## 10. CLAUDE.mdで運用を定義する
 
-OKF already provides `log.md` for Concept or bundle change history.
+この仕組みを継続的に運用するには、Claude Code自身の振る舞いを定義する必要があります。毎回人間が「Steeringを作って」「経緯を追記して」と指示する方法では、記録漏れが起きやすくなります。
 
-The history preserved by Steering is different in kind:
+### 10.1 Steeringの運用方針
 
-- `log.md` — **What changed?**
-- Steering — **How did we get here?**
+`CLAUDE.md` には、次の事項を定義します。
 
-Steering preserves not only the resulting change, but hypotheses, rejected paths, dead ends, surprises, external waiting states, and corrections encountered on the way to Current Knowledge.
+- **参照：** 非自明な調査、障害対応、設計判断を伴うタスクでは、着手前にKnowledge Indexを確認し、関連するSteeringを読む
+- **作成：** 後から経緯を追う価値があるタスクでは、着手時点でSteeringを作成する
+- **粒度：** 原則として1ファイル1事象
+- **記録：** 仮説、検証、採用・棄却の過程を逐次追記する
+- **訂正：** 誤った仮説を削除せず、訂正として残す
+- **対象：** 発端、調査、実装、テスト、残存リスク、未解決事項など
+- **例外：** タイポ修正など、経緯を残す価値が小さい作業では作成しない
 
-So the claim is not that OKF has no history mechanism. The deeper question is: **should change history and experiential history be treated as the same kind of history?**
+冒頭には日付、関連する過去のSteering、ステータスを記載します。ステータスは調査中・確定・棄却など文書の結論の状態を表し、未コミットなどの一時的なGit状態とは区別します。
 
-This use case raises several questions for OKF:
+大規模・重要な修正では、過去の文脈を持たない新規セッションにSteeringを読ませて独立レビューする運用も定義できます。
 
-1. Should Current Knowledge and the Experiential History that produced it be represented as the same unit?
-2. How should OKF relate to experience records that are organized by time or work episode and may contain multiple Concepts?
-3. Can multiple Retrieval Paths into original records be a useful OKF usage pattern without duplicating the Knowledge itself?
-4. Is separating Current Truth / Experiential History / Retrieval Index — and reading Current Truth first — a useful convention for long-lived AI agents?
-5. How should we think about a lifecycle in which a live coordination surface becomes an Experience Record after completion and later supports analogous-risk detection?
-6. As Steering records accumulate, how should an agent decide when it has retrieved enough prior experience without prematurely stopping exploration or reading without bound?
+### 10.2 Knowledge Indexの運用方針
 
-This is not a demand for a specific OKF specification change.
+- **役割：** `docs/` の現在の仕様を重複して保存しない
+- **収録：** 経緯や判断理由など、過去の経験を探すための話題を対象にする
+- **構成：** 話題名、関連ワード、参照先の三要素を基本とする
+- **参照：** 日付、Steeringファイル、原文どおりの見出しを記載する
+- **時系列：** 同じ話題の参照先は古い順に並べる
+- **複数参照：** 同じSteeringを複数トピックから参照できる
+- **分類：** 最初から作り込まず、必要に応じて整理する
+- **更新：** Steering確定時に収録候補を抽出し、定めた運用ルールに従って更新する
 
-It is a use case intended to discuss a practical question that emerges in long-running AI-assisted development:
+なお、今回参考にした既存の`CLAUDE.md`第2章では、Knowledge Indexの自動生成を禁止し、人間の明示判断を介する方針が定義されています。社内展開時には、**どこまでAIに自動更新させるかを運用ルールとして明確に決める必要があります。**
 
-> **What is lost when we preserve only current Knowledge?**
+### 10.3 ルールは固定しない
 
----
+`CLAUDE.md` は一度作ったら変更しない規約ではありません。記録が細かすぎる、必要な情報が残らない、索引が探しにくいといった問題が見つかれば見直します。AIの運用を定義するものであり、人間の実装判断を一律に制限するものではありません。
 
-## Conceptual Note — Structural Similarity to Event Sourcing
+## 11. 独立したセッションでレビューする
 
-This model emerged from practical use. Only afterward did we notice that it has a structural resemblance to Event Sourcing.
+Steeringは、**過去の作業経緯を知らない新しいAIセッションにレビューさせる**用途にも使えます。
 
-At a conceptual level:
+同じセッションで長く実装すると、それまでの判断を前提として考えやすくなります。そこで、大規模な修正や重要な変更では、新しいセッションにSteeringとコードを読ませ、独立した視点からレビューさせます。
 
 ```text
-Steering        ≈ history of experience and events
-Docs            ≈ Current Truth / materialized-view-like output
-Knowledge Index ≈ read / retrieval index over experience
+セッションA：調査・設計・実装 → Steeringを更新
+    ↓
+セッションB：Steeringとコードを確認 → 独立レビュー
+    ↓
+問題があれば修正
 ```
 
-But this is not strict Event Sourcing.
+**作業の文脈は引き継ぎながら、判断の視点は切り替えられます。** 必要に応じて再レビューできますが、無制限に繰り返す必要はありません。
 
-Steering contains more than structured events: hypotheses, rejected hypotheses, conversations, external confirmations, and accidental discoveries. Docs is also not reconstructed by deterministic replay.
+## 12. 導入によって期待できること
 
-**The resemblance is that history contributes to current state; the difference is that humans or AI interpret and verify experience before updating Current Truth.**
+### 12.1 セッションを切り替えやすくなる
 
----
+必要な経緯をSteeringから読み直せるため、コンテキストを無理に維持する必要がありません。
 
-## Conceptual Note — Structural Similarity to Yogācāra
+### 12.2 トークン消費や応答速度の負担を抑えられる可能性がある
 
-This model was not designed from Buddhist philosophy.
+必要な情報を選んで読み込めます。ただし、Steeringを大量に読めば、その分のトークンは消費します。
 
-After developing it through practical use, we noticed an interesting structural similarity to **Yogācāra**, particularly the distinction between accumulated traces of experience and cognition formed in the present.
+### 12.3 同じ説明や調査の繰り返しを減らせる
 
-This is not intended as a strict mapping between AI architecture and Buddhist concepts. Traditional Yogācāra discusses eight consciousnesses, so any analogy involving Ālayavijñāna and the six consciousnesses is necessarily selective.
+発端や検証結果が残っていれば、人間が過去の経緯を説明し直す負担を減らせます。
 
-In this model, Steering accumulates traces of experience.
+### 12.4 判断理由を追跡できる
 
-A current question triggers retrieval through the Knowledge Index, after which the current AI rereads relevant experience in the present context and forms a current understanding or decision.
+現在の仕様だけでなく、採用した理由や採用しなかった案を確認できます。
 
-```text
-accumulated past experience
-        ↓
-retrieval triggered by a current question
-        ↓
-understanding formed in the present context
-        ↓
-decision / action
-        ↓
-new experience is accumulated again
-```
+### 12.5 過去の経験を次の仕事に使える
 
-The point is not to turn Buddhist terminology into an AI architecture.
+以前の失敗や確認漏れを、新しい作業の計画やリスク確認に生かせます。
 
-The useful design intuition is simpler:
+これらは期待される効果であり、改善の程度は実際の運用で検証する必要があります。
 
-> **Stored experience is not the same thing as present cognition.**
+## 13. 運用上の注意点
 
-Instead of storing past experience as a fixed answer, preserve it as experience and allow meaning to be formed again from the present situation.
+### 13.1 記録しなかったことは残らない
 
-The similarity is therefore retrospective: a practical model happened to converge on a structure recognizable in an older conceptual tradition.
+Steeringは失われた会話を後から完全に復元する仕組みではありません。作業中から継続して記録する必要があります。
+
+### 13.2 AIの記録が正しいとは限らない
+
+AIが仕様を誤解したり、推測を事実として記録したりする可能性があります。情報源、確定事項、仮説、未確認事項を区別し、重要な判断は現在のコードや仕様と照合します。
+
+### 13.3 記録が増えすぎる可能性がある
+
+すべての会話を無差別に保存すると、読むためのトークンも増えます。経緯として価値のある情報を残し、必要な範囲を参照します。
+
+### 13.4 Knowledge Indexの品質が重要になる
+
+索引が不足すると過去の経験が見つかりません。一方、索引を増やしすぎても探しにくくなります。実際の質問をもとに育てていきます。
+
+### 13.5 機密情報の管理が必要になる
+
+仕様書やチャットに顧客情報や機密情報が含まれる場合があります。転記は必要最小限にし、リポジトリの権限や社内ルールに従います。
+
+## 14. まずは一つのタスクから
+
+まず `CLAUDE.md` にSteeringとKnowledge Indexの運用ルールを定義します。そのうえで、一つの調査や実装タスクで試します。
+
+作業開始時にSteeringを作成し、実装プランの壁打ち、調査、実装、検証を記録します。途中で新しいセッションへ切り替え、**MEMORYの引き継ぎメモとSteeringだけで作業を再開できるか**確認します。
+
+作業完了後は、必要に応じて現在の仕様を`docs/`へ反映し、Knowledge Indexを運用ルールに従って更新します。
+
+最初から完璧なルールや分類体系を作る必要はありません。実際の開発で生じた問題に合わせて改善していきます。
+
+## おわりに
+
+この提案は、AIに特別な記憶能力を追加するものではありません。作業中に得た情報をAI自身に記録させ、必要なときに読み直せるようにする仕組みです。
+
+セッションを切り替えても昨日の判断経緯を読み直せる。作業が終わっても、その経験を次の仕事に生かせる。過去の失敗を知っていれば、同じ失敗を避ける提案もできるかもしれません。
+
+**経験は保存する。意味は現在の文脈で再構築する。**
+
+Steeringは「舵取り」という意味です。今日の仕事で得た経験を、明日の仕事の舵取りに使う。そんな運用を目指しています。
